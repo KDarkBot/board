@@ -564,36 +564,13 @@
   
       <!-- 게시물 종류 선택 -->
       <h4 class="text-sm md:text-base font-bold mb-2 text-gray-700">게시물 종류 선택</h4>
-      <div id="post-type-selector" class="grid grid-cols-2 gap-4 mb-4">
-        <button
-          class="post-type-option p-2 flex flex-col items-center gap-2 border rounded-lg text-gray-700 hover:bg-gray-100 transition"
-          data-type="landscape"
-        >
-          <i class="fas fa-mountain text-xl md:text-2xl"></i>
-          <span class="text-xs md:text-sm">풍경사진</span>
-        </button>
-        <button
-          class="post-type-option p-2 flex flex-col items-center gap-2 border rounded-lg text-gray-700 hover:bg-gray-100 transition"
-          data-type="art"
-        >
-          <i class="fas fa-palette text-xl md:text-2xl"></i>
-          <span class="text-xs md:text-sm">그림</span>
-        </button>
-        <button
-          class="post-type-option p-2 flex flex-col items-center gap-2 border rounded-lg text-gray-700 hover:bg-gray-100 transition"
-          data-type="stocks"
-        >
-          <i class="fas fa-chart-line text-xl md:text-2xl"></i>
-          <span class="text-xs md:text-sm">주식</span>
-        </button>
-        <button
-          class="post-type-option p-2 flex flex-col items-center gap-2 border rounded-lg text-gray-700 hover:bg-gray-100 transition"
-          data-type="daily"
-        >
-          <i class="fas fa-coffee text-xl md:text-2xl"></i>
-          <span class="text-xs md:text-sm">일상</span>
-        </button>
+      <div id="post-type-buttons" class="flex gap-2 mb-4">
+        <button data-type="landscape" class="post-type-btn px-4 py-2 border rounded-lg">풍경사진</button>
+        <button data-type="art" class="post-type-btn px-4 py-2 border rounded-lg">그림</button>
+        <button data-type="stocks" class="post-type-btn px-4 py-2 border rounded-lg">주식</button>
+        <button data-type="daily" class="post-type-btn px-4 py-2 border rounded-lg">일상</button>
       </div>
+      
   
       <div class="flex justify-end gap-2">
         <button id="save-post" class="px-3 md:px-4 py-1.5 md:py-2 text-sm md:text-base bg-green-500 text-white font-medium rounded-lg hover:bg-green-600">

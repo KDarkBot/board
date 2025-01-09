@@ -158,7 +158,7 @@ const firebaseConfig = {
     rankingButton?.addEventListener("click", () => {
       window.location.href = "index2.html";
     });
-  
+   
     // -------------------------------
     // 4) 새 글 작성 (이미지 업로드 포함)
     // -------------------------------
@@ -204,78 +204,60 @@ const firebaseConfig = {
      });
      let selectedPostType = null; // 선택된 게시물 종류
 
-     // 게시물 종류 선택
-     const postTypeButtons = document.querySelectorAll(".post-type-option");
-     postTypeButtons.forEach((button) => {
-       button.addEventListener("click", () => {
-         // 기존 선택 상태 초기화
-         postTypeButtons.forEach((btn) => btn.classList.remove("bg-blue-100", "border-blue-500"));
-         
-         // 현재 버튼 선택
-         button.classList.add("bg-blue-100", "border-blue-500");
-         selectedPostType = button.getAttribute("data-type"); // 선택한 게시물 종류 저장
-       });
-     });
-   
-     // 새 글 저장 버튼 클릭
-     document.getElementById("save-post").addEventListener("click", async () => {
-       const title = document.getElementById("post-title").value.trim();
-       const content = document.getElementById("post-content").value.trim();
-       const file = document.getElementById("post-file").files[0];
-   
-       if (!title || !content || !selectedPostType) {
-         alert("모든 필드와 게시물 종류를 선택하세요!");
-         return;
-       }
-   
-       try {
-         // Firestore에 게시글 저장
-         const postDoc = {
-           title,
-           content,
-           type: selectedPostType, // 게시물 종류 추가
-           timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-         };
-   
-         // 이미지 업로드 처리
-         if (file) {
-           const storageRef = firebase.storage().ref(`images/${Date.now()}_${file.name}`);
-           const snapshot = await storageRef.put(file);
-           const imageUrl = await snapshot.ref.getDownloadURL();
-           postDoc.imageUrl = imageUrl;
-         }
-   
-         await firebase.firestore().collection("posts").add(postDoc);
-   
-         alert("게시물이 성공적으로 저장되었습니다!");
-         // 모달 닫기 및 입력 필드 초기화
-         document.getElementById("post-modal").classList.add("hidden");
-         document.getElementById("post-title").value = "";
-         document.getElementById("post-content").value = "";
-         document.getElementById("post-file").value = "";
-         selectedPostType = null;
-         postTypeButtons.forEach((btn) => btn.classList.remove("bg-blue-100", "border-blue-500"));
-       } catch (error) {
-         console.error("게시물 저장 중 오류 발생:", error);
-         alert("게시물 저장 중 오류가 발생했습니다.");
-       }
-     });
-    const shopButton = document.getElementById("shop-button");
-    const shopModal = document.getElementById("shop-modal");
-    const closeShopModal = document.getElementById("close-shop-modal");
+   // 게시물 저장 버튼 클릭 이벤트
+   document.getElementById("save-post").addEventListener("click", async () => {
+    const title = document.getElementById("post-title").value.trim();
+    const content = document.getElementById("post-content").value.trim();
+    const file = document.getElementById("post-file").files[0];
   
-    shopButton?.addEventListener("click", () => {
-      if (!currentUser) {
-        alert("로그인이 필요합니다.");
-        return;
+    if (!title || !content || !selectedPostType) {
+      alert("모든 필드와 게시물 종류를 선택하세요!");
+      return;
+    }
+  
+    if (!currentUser) {
+      alert("로그인이 필요합니다!");
+      return;
+    }
+  
+    try {
+      // Firestore에서 현재 사용자 이름 가져오기
+      const userDoc = await firebase.firestore().collection("users").doc(currentUser.uid).get();
+      const authorName = userDoc.exists ? userDoc.data().name || "익명" : "익명";
+  
+      // Firestore에 게시글 저장
+      const postDoc = {
+        title,
+        content,
+        type: selectedPostType, // 게시물 종류 추가
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        author: authorName,
+      };
+  
+      // 이미지 업로드 처리
+      if (file) {
+        const storageRef = firebase.storage().ref(`images/${Date.now()}_${file.name}`);
+        const snapshot = await storageRef.put(file);
+        const imageUrl = await snapshot.ref.getDownloadURL();
+        postDoc.imageUrl = imageUrl;
       }
-      // 상점 모달 열기
-      toggleModal("shop-modal", true);
-    });
   
-    closeShopModal?.addEventListener("click", () => {
-      toggleModal("shop-modal", false);
-    });
+      await firebase.firestore().collection("posts").add(postDoc);
+  
+      alert("게시물이 성공적으로 저장되었습니다!");
+      // 입력 필드 초기화
+      document.getElementById("post-modal").classList.add("hidden");
+      document.getElementById("post-title").value = "";
+      document.getElementById("post-content").value = "";
+      document.getElementById("post-file").value = "";
+      selectedPostType = null;
+      postTypeButtons.forEach((btn) => btn.classList.remove("bg-blue-100", "border-blue-500"));
+    } catch (error) {
+      console.error("게시물 저장 중 오류 발생:", error);
+      alert("게시물 저장 중 오류가 발생했습니다.");
+    }
+  });
+  
   
     // [새로 추가] "게시물 하나 지우기" 아이템 구매 로직
     const buyDeletePostItem = document.getElementById("buy-delete-post-item");
@@ -544,6 +526,23 @@ const firebaseConfig = {
       betEvenButton.addEventListener("click", () => placeBet("even"));
   
     
+
+      // 게시물 종류 버튼 이벤트 리스너
+      const postTypeButtons = document.querySelectorAll(".post-type-btn");
+      postTypeButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          // 모든 버튼 스타일 초기화
+          postTypeButtons.forEach((button) => button.classList.remove("bg-blue-100", "border-blue-500"));
+      
+          // 선택된 버튼 강조
+          btn.classList.add("bg-blue-100", "border-blue-500");
+      
+          // 선택된 게시물 종류 설정
+          selectedPostType = btn.getAttribute("data-type");
+          console.log("선택된 게시물 종류:", selectedPostType);
+        });
+      });
+      
     // -------------------------------
     // 8) 댓글 실시간 불러오기
     // -------------------------------
@@ -644,65 +643,67 @@ const firebaseConfig = {
     // 9) 게시물 보기(viewPost)
     // -------------------------------
     const viewPost = (postId) => {
-      db.collection("posts").doc(postId).get().then((doc) => {
-        if (doc.exists) {
-          const post = doc.data();
-          const timestamp = post.timestamp?.toDate().toLocaleString() || "시간 정보 없음";
-  
-          document.getElementById("view-title").textContent = post.title || "제목 없음";
-          document.getElementById("view-author").textContent = post.author || "작성자 없음";
-          document.getElementById("view-timestamp").textContent = timestamp;
-          document.getElementById("view-content").textContent = post.content || "내용 없음";
-  
-          const imageElement = document.getElementById("view-image");
-          if (post.imageUrl) {
-            imageElement.innerHTML = `<img src="${post.imageUrl}" alt="게시물 이미지" class="max-h-64 w-full object-cover rounded-lg">`;
+        db.collection("posts").doc(postId).get().then((doc) => {
+          if (doc.exists) {
+            const post = doc.data();
+            const timestamp = post.timestamp?.toDate().toLocaleString() || "시간 정보 없음";
+      
+            document.getElementById("view-title").textContent = post.title || "제목 없음";
+            document.getElementById("view-author").textContent = post.author || "작성자 없음"; // 작성자 이름 표시
+            document.getElementById("view-timestamp").textContent = timestamp;
+            document.getElementById("view-content").textContent = post.content || "내용 없음";
+      
+            const imageElement = document.getElementById("view-image");
+            if (post.imageUrl) {
+              imageElement.innerHTML = `<img src="${post.imageUrl}" alt="게시물 이미지" class="max-h-64 w-full object-cover rounded-lg">`;
+            } else {
+              imageElement.innerHTML = `<span class="text-gray-500">이미지가 없습니다</span>`;
+            }
+      
+            // 좋아요 버튼 설정
+            const likeButton = document.getElementById("like-post");
+            if (likeButton) {
+              likeButton.onclick = () => {
+                if (likedPosts.has(postId)) {
+                  alert("이미 좋아요를 누르셨습니다!");
+                  return;
+                }
+      
+                db.collection("posts").doc(postId).update({
+                  likes: firebase.firestore.FieldValue.increment(1)
+                }).then(() => {
+                  likedPosts.add(postId);
+                  alert("좋아요를 눌렀습니다!");
+                }).catch((error) => {
+                  console.error("좋아요 업데이트 실패:", error);
+                  alert("좋아요 업데이트 중 오류가 발생했습니다.");
+                });
+              };
+            }
+      
+            // 댓글 실시간 불러오기
+            loadComments(postId);
+      
+            // 댓글 작성 버튼
+            const addCommentButton = document.getElementById("add-comment");
+            if (addCommentButton) {
+              addCommentButton.onclick = () => addComment(postId);
+            }
+      
+            // 관리자 별점 섹션
+            document.getElementById("view-rating").textContent = post.rating ? `${post.rating}점` : "없음";
+            enableRatingSection(postId);
+      
+            // 모달 열기
+            toggleModal("view-modal", true);
           } else {
-            imageElement.innerHTML = `<span class="text-gray-500">이미지가 없습니다</span>`;
+            console.error("문서가 존재하지 않습니다!");
           }
-  
-          // 좋아요 버튼
-          const likeButton = document.getElementById("like-post");
-          if (likeButton) {
-            likeButton.onclick = () => {
-              // 중복 좋아요 방지
-              if (likedPosts.has(postId)) {
-                alert("이미 좋아요를 누르셨습니다!");
-                return;
-              }
-  
-              // 좋아요 +1
-              db.collection("posts").doc(postId).update({
-                likes: firebase.firestore.FieldValue.increment(1)
-              }).then(() => {
-                likedPosts.add(postId);
-                alert("좋아요를 눌렀습니다!");
-              }).catch((error) => {
-                console.error("좋아요 업데이트 실패:", error);
-                alert("좋아요 업데이트 중 오류가 발생했습니다.");
-              });
-            };
-          }
-  
-          // 댓글 실시간 불러오기
-          loadComments(postId);
-  
-          // 댓글 작성 버튼
-          const addCommentButton = document.getElementById("add-comment");
-          if (addCommentButton) {
-            addCommentButton.onclick = () => addComment(postId);
-          }
-  
-          // 관리자 별점 섹션
-          document.getElementById("view-rating").textContent = post.rating ? `${post.rating}점` : "없음";
-          enableRatingSection(postId);
-  
-          // 모달 열기
-          toggleModal("view-modal", true);
-        }
-      });
-    };
-  
+        }).catch((error) => {
+          console.error("게시물 불러오기 오류:", error);
+        });
+      };
+      
     // -------------------------------
     // 10) 게시물 목록 불러오기(loadPosts)
     // -------------------------------
@@ -722,100 +723,101 @@ const getPostTypeIcon = (type) => {
         return `<i class="fas fa-question-circle text-gray-500 text-lg"></i> 기타`;
     }
   };
-    const loadPosts = async () => {
-        const postList = document.getElementById("post-list");
-      
-        try {
-          // 1등 사용자 가져오기
-          const topUserSnapshot = await db.collection("users")
-            .orderBy("points", "desc")
-            .limit(1)
-            .get();
-          const topUser = topUserSnapshot.empty ? null : topUserSnapshot.docs[0].data().name;
-      
-          // Firestore의 posts 컬렉션에서 실시간 업데이트 감지
-          db.collection("posts")
-            .orderBy("timestamp", "desc")
-            .onSnapshot(async (snapshot) => {
-              // 기존 데이터를 초기화
-              postList.innerHTML = "";
-      
-              try {
-                let userStealItems = 0;
-                if (currentUser) {
-                  const userDoc = await db.collection("users").doc(currentUser.uid).get();
-                  userStealItems = userDoc.exists ? userDoc.data().stealItems || 0 : 0;
-                }
-      
-                snapshot.forEach((doc) => {
-                  const post = doc.data();
-                  const postId = doc.id;
-                  const timestamp = post.timestamp?.toDate().toLocaleString() || "시간 정보 없음";
-                  const postTypeIcon = getPostTypeIcon(post.type); // 게시물 종류 아이콘 가져오기
-                  // 1등 사용자 확인
-                  const isTopUser = topUser === post.author;
-      
-                  // 행 생성
-                  const row = document.createElement("tr");
-                  if (isTopUser) {
-                    row.classList.add("top-user-row", "animate-pulse");
-                    row.style.background = "linear-gradient(to right, #ffafbd, #ffc3a0)";
-                  }
-      
-                  row.innerHTML = `
-                   <td class="py-3 px-4 text-sm sm:text-base text-center">${postTypeIcon}</td> <!-- 종류 아이콘 표시 -->
-                  <td class="py-2 px-4 text-sm sm:text-base truncate whitespace-nowrap">${post.title || "제목 없음"}</td>
-                  <td class="py-2 px-4 text-sm sm:text-base truncate whitespace-nowrap">${post.author || "작성자 없음"}</td>
-                  <td class="py-2 px-4 hidden md:table-cell text-sm sm:text-base whitespace-nowrap">${timestamp}</td>
-                  <td class="py-2 px-4 text-center text-sm sm:text-base whitespace-nowrap">${post.likes || 0}</td>
-                  <td class="py-2 px-4 text-center whitespace-nowrap">
-                    <button class="view-post bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600 transition-all duration-200" data-id="${postId}">
-                      보기
-                    </button>
-                    ${
-                      (isAdmin || userStealItems > 0)
-                        ? `<button class="steal-post bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-all duration-200 ml-1" data-id="${postId}">뺏기</button>`
-                        : ""
-                    }
-                    ${
-                      isAdmin
-                        ? `<button class="delete-post bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-all duration-200 ml-1" data-id="${postId}">삭제</button>`
-                        : ""
-                    }
-                  </td>
-                `;
-                  postList.appendChild(row);
-                });
-      
-                // 버튼 이벤트 추가
-                document.querySelectorAll(".view-post").forEach((btn) => {
-                  btn.addEventListener("click", (e) => {
-                    const postId = e.target.dataset.id;
-                    viewPost(postId);
-                  });
-                });
-      
-                document.querySelectorAll(".delete-post").forEach((btn) => {
-                  btn.addEventListener("click", (e) => {
-                    const postId = e.target.dataset.id;
-                    deletePost(postId);
-                  });
-                });
-      
-                document.querySelectorAll(".steal-post").forEach((btn) => {
-                  btn.addEventListener("click", (e) => {
-                    const postId = e.target.dataset.id;
-                    stealPost(postId);
-                  });
-                });
-              } catch (error) {
-                console.error("실시간 게시물 로딩 중 오류 발생:", error);
+  const loadPosts = async () => {
+    const postList = document.getElementById("post-list");
+  
+    try {
+      // 1등 사용자 가져오기
+      const topUserSnapshot = await db.collection("users")
+        .orderBy("points", "desc")
+        .limit(1)
+        .get();
+      const topUser = topUserSnapshot.empty ? null : topUserSnapshot.docs[0].data().name;
+  
+      // Firestore의 posts 컬렉션에서 실시간 업데이트 감지
+      db.collection("posts")
+        .orderBy("timestamp", "desc")
+        .onSnapshot(async (snapshot) => {
+          // 기존 데이터를 초기화
+          postList.innerHTML = "";
+  
+          try {
+            let userStealItems = 0;
+            if (currentUser) {
+              const userDoc = await db.collection("users").doc(currentUser.uid).get();
+              userStealItems = userDoc.exists ? userDoc.data().stealItems || 0 : 0;
+            }
+  
+            snapshot.forEach((doc) => {
+              const post = doc.data();
+              const postId = doc.id;
+              const timestamp = post.timestamp?.toDate().toLocaleString() || "시간 정보 없음";
+              const postTypeIcon = getPostTypeIcon(post.type); // 게시물 종류 아이콘 가져오기
+              const isTopUser = topUser === post.author; // 1등 사용자 확인
+  
+              // 행 생성
+              const row = document.createElement("tr");
+              if (isTopUser) {
+                row.classList.add("top-user-row", "animate-pulse");
+                row.style.background = "linear-gradient(to right, #ffafbd, #ffc3a0)";
               }
+  
+              row.innerHTML = `
+                <td class="py-3 px-4 text-sm sm:text-base text-center">${postTypeIcon}</td> <!-- 종류 아이콘 표시 -->
+                <td class="py-2 px-4 text-sm sm:text-base truncate whitespace-nowrap">${post.title || "제목 없음"}</td>
+                <td class="py-2 px-4 text-sm sm:text-base truncate whitespace-nowrap">${post.author || "작성자 없음"}</td>
+                <td class="py-2 px-4 hidden md:table-cell text-sm sm:text-base whitespace-nowrap">${timestamp}</td>
+                <td class="py-2 px-4 text-center text-sm sm:text-base whitespace-nowrap">${post.likes || 0}</td>
+                <td class="py-2 px-4 text-center whitespace-nowrap">
+                  <button class="view-post bg-indigo-500 text-white px-2 py-1 rounded hover:bg-indigo-600 transition-all duration-200" data-id="${postId}">
+                    보기
+                  </button>
+                  ${
+                    (isAdmin || userStealItems > 0)
+                      ? `<button class="steal-post bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600 transition-all duration-200 ml-1" data-id="${postId}">뺏기</button>`
+                      : ""
+                  }
+                  ${
+                    isAdmin
+                      ? `<button class="delete-post bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 transition-all duration-200 ml-1" data-id="${postId}">삭제</button>`
+                      : ""
+                  }
+                </td>
+              `;
+  
+              postList.appendChild(row);
             });
-        } catch (error) {
-          console.error("1등 사용자 가져오기 실패:", error);
-        }
-      };
+  
+            // 버튼 이벤트 추가
+            document.querySelectorAll(".view-post").forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const postId = e.target.dataset.id;
+                viewPost(postId);
+              });
+            });
+  
+            document.querySelectorAll(".delete-post").forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const postId = e.target.dataset.id;
+                deletePost(postId);
+              });
+            });
+  
+            document.querySelectorAll(".steal-post").forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const postId = e.target.dataset.id;
+                stealPost(postId);
+              });
+            });
+          } catch (error) {
+            console.error("실시간 게시물 로딩 중 오류 발생:", error);
+          }
+        });
+    } catch (error) {
+      console.error("1등 사용자 가져오기 실패:", error);
+    }
+  };
+  
       
   
   
@@ -1131,32 +1133,58 @@ const getPostTypeIcon = (type) => {
         });
     });
   
-    // 회원 정보 수정 (이름 변경)
-    document.getElementById("save-user-info")?.addEventListener("click", () => {
-      const newName = document.getElementById("edit-username").value.trim();
-      if (!newName) {
-        alert("새 이름을 입력하세요.");
-        return;
-      }
-      if (!currentUser) {
-        alert("로그인이 필요합니다.");
-        return;
-      }
-  
-      // Firestore users/{uid} 문서 업데이트
-      db.collection("users")
-        .doc(currentUser.uid)
-        .update({ name: newName })
-        .then(() => {
-          alert("이름이 변경되었습니다!");
+    document.getElementById("save-user-info")?.addEventListener("click", async () => {
+        const newName = document.getElementById("edit-username").value.trim();
+      
+        if (!newName) {
+          alert("새 이름을 입력하세요.");
+          return;
+        }
+        if (!currentUser) {
+          alert("로그인이 필요합니다.");
+          return;
+        }
+      
+        try {
+          // 1. Firestore에서 현재 사용자 정보 가져오기
+          const userDocRef = db.collection("users").doc(currentUser.uid);
+          const userDoc = await userDocRef.get();
+      
+          if (!userDoc.exists) {
+            alert("사용자 정보를 찾을 수 없습니다.");
+            return;
+          }
+      
+          const currentName = userDoc.data().name;
+      
+          // 2. 사용자 이름 업데이트
+          await userDocRef.update({ name: newName });
+      
+          // 3. 게시물의 작성자 이름 업데이트
+          const postsSnapshot = await db.collection("posts").where("author", "==", currentName).get();
+      
+          if (!postsSnapshot.empty) {
+            const batch = db.batch();
+            postsSnapshot.forEach((doc) => {
+              const postRef = db.collection("posts").doc(doc.id);
+              batch.update(postRef, { author: newName });
+            });
+            await batch.commit();
+            console.log(`${postsSnapshot.size}개의 게시물이 업데이트되었습니다.`);
+          } else {
+            console.log("해당 작성자의 게시물이 없습니다.");
+          }
+      
+          alert("이름이 성공적으로 업데이트되었습니다.");
           toggleModal("edit-user-modal", false);
           document.getElementById("edit-username").value = "";
-        })
-        .catch((error) => {
+      
+        } catch (error) {
           console.error("이름 업데이트 실패:", error);
           alert("이름 업데이트 중 오류가 발생했습니다.");
-        });
-    });
+        }
+      });
+      
   
     document.getElementById("logout-button")?.addEventListener("click", () => {
       auth.signOut()
